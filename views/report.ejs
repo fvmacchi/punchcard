@@ -108,7 +108,7 @@
                     <% }; %>
                   </td>
                   <td>
-                    <%=employee.hours.modifiers.day[i].join(', ')%>
+                    <%=k==0?employee.hours.modifiers.day[i].join(', '):''%>
                   </td>
                 </tr>
               <% }); %>
