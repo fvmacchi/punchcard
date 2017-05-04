@@ -82,6 +82,17 @@ router.get('/report/:date', function(req, res, next) {
   });
 });
 
+router.post('/report/:date/:employee', function(req, res, next) {
+  var date = req.params.date;
+  var d = new Date(date);
+  var employee_id = req.params.employee;
+  var intervals = JSON.parse(req.body.intervals);
+  
+  c.time.updateEmployeeHours(d, employee_id, intervals, function() {
+    res.redirect('/report/' + date);
+  });
+});
+
 module.exports = function(controllers) {
   c = controllers;
   return router;

@@ -1,5 +1,6 @@
 var fs = require('fs');
 var async = require('async');
+var uuid = require('uuid/v4');
 
 var c = undefined;
 
@@ -17,7 +18,7 @@ exports.isOnTheClock = function(employee_id, callback) {
 exports.punch_in = function(employee_id, callback) {
   var d = new Date();
   var punch_time = new Date(d.getTime());
-  getHoursFile(d, function(hours) {
+  exports.getHoursFile(d, function(hours) {
     if(!(employee_id in hours)) {
       hours[employee_id] = [];
     }
@@ -46,7 +47,7 @@ exports.punch_out = function(employee_id, callback) {
   var hours = undefined;
   async.series([
     function(callback) {
-      getHoursFile(week_before, function(result) {
+      exports.getHoursFile(week_before, function(result) {
         if(!(employee_id in result)) {
           return callback();
         }
@@ -61,7 +62,7 @@ exports.punch_out = function(employee_id, callback) {
       });
     },
     function(callback) {
-      getHoursFile(d, function(result) {
+      exports.getHoursFile(d, function(result) {
         hours = result;
         return callback();
       });
@@ -86,7 +87,7 @@ exports.punch_out = function(employee_id, callback) {
 
 exports.hadNoLunch = function(employee_id, callback) {
   var d = new Date();
-  getHoursFile(d, function(hours) {
+  exports.getHoursFile(d, function(hours) {
     if(!(employee_id in hours) || !hours[employee_id]) {
       return callback(false);
     }
@@ -103,8 +104,9 @@ var saveHoursFile = function(d, hours, callback) {
     return callback();
   });
 };
+exports.saveHoursFile = saveHoursFile;
 
-var getHoursFile = function(d, callback) {
+exports.getHoursFile = function(d, callback) {
   var hours_file = getHoursFilePath(d);
   async.series([
     function(callback) {
@@ -167,11 +169,40 @@ var getHoursFilePath = function(d) {
   return path;
 };
 
+exports.updateEmployeeHours = function(d, employee_id, intervals, callback) {
+  exports.getHoursFile(d, function(hours) {
+    if(!hours[employee_id]) {
+      hours[employee_id] = [];
+    }
+    file_intervals = hours[employee_id];
+    intervals.sort(function(a,b){return a.punch_in-b.punch_in});
+    var new_intervals = [];
+    hours[employee_id] = new_intervals;
+    intervals.forEach(function(interval) {
+      if(!interval.punch_in) {
+        return;
+      }
+      var new_interval = file_intervals.find(function(e){return e.id==interval.id;});
+      if(!new_interval) {
+        new_interval = {};
+      }
+      new_intervals.push(new_interval);
+      Object.keys(interval).forEach(function(key) {
+        new_interval[key] = interval[key];
+      });
+      if(!interval.punch_out) {
+        delete new_interval.punch_out;
+      }
+    });
+    exports.saveHoursFile(d, hours, callback);
+  });
+};
+
 exports.report = function(d, callback) {
   var reportDetails = {};
   var dateName = getHoursFileName(d);
   reportDetails.date = dateName;
-  getHoursFile(d, function(hours) {
+  exports.getHoursFile(d, function(hours) {
     c.employees.getEmployees(function(employees) {
       reportDetails.employees = employees;
       employees.forEach(function(employee) {
@@ -283,4 +314,8 @@ var applyHourlyRules = function(report) {
   });
   
   return report;
+};
+
+exports.generateIntervalID = function() {
+  return uuid();
 };
