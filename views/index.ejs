@@ -22,12 +22,18 @@
     <div action="#">
       <input id="barcode_input" type="text" style="position:absolute;right:9000px;"/>
     </div>
+    <div class="row">
+      <div class="col-md-12">
+        <h1 id="message_box"></h1>
+      </div>
+    </div>
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="/js/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="/js/bootstrap.min.js"></script>
     <script src="/js/JsBarcode.min.js"></script>
     <script>
+    var currentDisplayTask = undefined;
     $(".barcode").each(function() {
       var e = $(this);
       var id = e.data('barcode-id');
@@ -63,9 +69,39 @@
           barcode_id: barcode_id
         },
         success: function(data) {
-          console.log(data);
+          barcodeEventReturned(data);
         }
       });
+    };
+
+    var barcodeEventReturned = function(data) {
+      var e = $("#message_box");
+      var action = data.action;
+      var status = data.status;
+      var message = "";
+      if(action == "punch_in") {
+        if(status == 'success') {
+          message = data.employee.firstName + " " + data.employee.lastName + " punched in at " + (new Date(data.time)).toLocaleTimeString();
+        } else {
+          message = ""
+        }
+      } else if(action == "punch_out") {
+        if(status == 'success') {
+          message = data.employee.firstName + " " + data.employee.lastName + " punched out at " + (new Date(data.time)).toLocaleTimeString();
+        }
+      } else if(action == "no_lunch") {
+
+      }
+      if(currentDisplayTask != undefined) {
+        try {
+          clearTimeout(currentDisplayTask);
+        } catch(e) {}
+      }
+      $("#message_box").css('color', status == 'success' ? 'black' : 'red');
+      $("#message_box").html(message);
+      currentDisplayTask = setTimeout(function() {
+        $("#message_box").html("");
+      }, 10000);
     };
     
     </script>

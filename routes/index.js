@@ -33,28 +33,35 @@ router.post('/employee/edit', function(req, res, next) {
 router.post('/barcode', function(req, res, next) {
   var barcode_id = req.body.barcode_id;
   c.barcodes.getMeta(barcode_id, function(meta) {
+    if(!meta) {
+      return;
+    }
+    var employee = meta.employee;
     if(meta.action == "punch_in") {
       c.time.punch_in(meta.employee.id, function(success, time) {
         console.log(success)
         return res.send({
             action: 'punch_in',
             time: time,
-            status: success ? 'success' : 'fail'
+            status: success ? 'success' : 'fail',
+            employee: employee
         });
       });
     } else if (meta.action == "punch_out") {
       c.time.punch_out(meta.employee.id, function(success, time) {
         return res.send({
-          action: 'punch_in',
+          action: 'punch_out',
           time: time,
-          status: success ? 'success' : 'fail'
+          status: success ? 'success' : 'fail',
+          employee: employee
         });
       });
     } else if (meta.action == "no_lunch") {
       c.time.hadNoLunch(meta.employee.id, function(success) {
         return res.send({
           action: 'no_lunch',
-          status: success ? 'success' : 'fail'
+          status: success ? 'success' : 'fail',
+          employee: employee
         });
       });
     }
