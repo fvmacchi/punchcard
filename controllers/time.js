@@ -30,6 +30,7 @@ exports.punch_in = function(employee_id, callback) {
       }
     }
     var new_punch = {
+      'id': exports.generateIntervalID(),
       'punch_in': punch_time.getTime()
     };
     hours[employee_id].push(new_punch);
@@ -182,9 +183,11 @@ exports.updateEmployeeHours = function(d, employee_id, intervals, callback) {
       if(!interval.punch_in) {
         return;
       }
-      var new_interval = file_intervals.find(function(e){return e.id==interval.id;});
+      var new_interval = file_intervals.find(function(e){return e.id && e.id==interval.id;});
       if(!new_interval) {
-        new_interval = {};
+        new_interval = {
+          'id': exports.generateIntervalID()
+        };
       }
       new_intervals.push(new_interval);
       Object.keys(interval).forEach(function(key) {
@@ -231,8 +234,9 @@ exports.report = function(d, callback) {
           if(!punch_complete) {
             punch_out = new Date();
           }
-          employee.hours.day[day_of_week] += punch_out.getTime() - punch_in.getTime();
-          employee.hours.total += employee.hours.day[day_of_week];
+          var delta = punch_out.getTime() - punch_in.getTime()
+          employee.hours.day[day_of_week] += delta;
+          employee.hours.total += delta;
         });
       });
       applyHourlyRules(reportDetails);
